@@ -63,9 +63,13 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
 
     @Override
     public String generate(TokenPayload<R, U> tokenPayload) {
-        byte[] tokenPayloadBytes = SerializationUtils.serialize(tokenPayload);
-        byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes, this.cryptographyKey.getBytes());
-        return this.encodingHelper.encode(encryptedToken);
+        try {
+            byte[] tokenPayloadBytes = SerializationUtils.serialize(tokenPayload);
+            byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes, this.cryptographyKey.getBytes());
+            return this.encodingHelper.encode(encryptedToken);
+        } catch (Exception ex) {
+            throw new TokenManagerException("Falha ao tentar gerar o token.", ex);
+        }
     }
 
     @Override

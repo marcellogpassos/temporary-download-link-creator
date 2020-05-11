@@ -2,6 +2,7 @@ package br.com.marcellopassos.tdlc;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -49,6 +50,10 @@ public class TokenPayload<R extends Serializable, U extends Serializable> implem
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isTokenExpired(Long expiration) {
+        return LocalDateTime.now().isAfter(this.createdAt.plus(expiration, ChronoUnit.MILLIS));
     }
 
     public boolean isPermissionGranted(U requestUserId) {

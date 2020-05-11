@@ -8,12 +8,10 @@ import br.com.marcellopassos.tdlc.helpers.IEncodingHelper;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 public class TokenManager<R extends Serializable, U extends Serializable> implements ITokenManager<R, U> {
 
-    private final String cryptographyKey;
+    private final String secretKey;
 
     private final Long expiration;
 
@@ -21,21 +19,21 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
 
     private final IEncodingHelper encodingHelper;
 
-    public TokenManager(String cryptographyKey, Long expiration) {
-        this(cryptographyKey, expiration, new DefaultCryptographyHelper(), new DefaultEncodingHelper());
+    public TokenManager(String secretKey, Long expiration) {
+        this(secretKey, expiration, new DefaultCryptographyHelper(), new DefaultEncodingHelper());
     }
 
-    public TokenManager(String cryptographyKey, Long expiration, ICryptographyHelper cryptographyHelper) {
-        this(cryptographyKey, expiration, cryptographyHelper, new DefaultEncodingHelper());
+    public TokenManager(String secretKey, Long expiration, ICryptographyHelper cryptographyHelper) {
+        this(secretKey, expiration, cryptographyHelper, new DefaultEncodingHelper());
     }
 
-    public TokenManager(String cryptographyKey, Long expiration, IEncodingHelper encodingHelper) {
-        this(cryptographyKey, expiration, new DefaultCryptographyHelper(), encodingHelper);
+    public TokenManager(String secretKey, Long expiration, IEncodingHelper encodingHelper) {
+        this(secretKey, expiration, new DefaultCryptographyHelper(), encodingHelper);
     }
 
-    public TokenManager(String cryptographyKey, Long expiration, ICryptographyHelper cryptographyHelper,
+    public TokenManager(String secretKey, Long expiration, ICryptographyHelper cryptographyHelper,
                         IEncodingHelper encodingHelper) {
-        this.cryptographyKey = cryptographyKey;
+        this.secretKey = secretKey;
         this.expiration = expiration;
         this.cryptographyHelper = cryptographyHelper;
         this.encodingHelper = encodingHelper;
@@ -65,7 +63,7 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
     public String generate(TokenPayload<R, U> tokenPayload) {
         try {
             byte[] tokenPayloadBytes = SerializationUtils.serialize(tokenPayload);
-            byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes, this.cryptographyKey.getBytes());
+            byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes, this.secretKey.getBytes());
             return this.encodingHelper.encode(encryptedToken);
         } catch (Exception ex) {
             throw new TokenManagerException("Falha ao tentar gerar o token.", ex);
@@ -95,7 +93,7 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
     private TokenPayload<R, U> getTokenPayload(String token) {
         try {
             byte[] encryptedToken = this.encodingHelper.decode(token);
-            byte[] tokenPayloadBytes = this.cryptographyHelper.decrypt(encryptedToken, this.cryptographyKey.getBytes());
+            byte[] tokenPayloadBytes = this.cryptographyHelper.decrypt(encryptedToken, this.secretKey.getBytes());
             return SerializationUtils.deserialize(tokenPayloadBytes);
         } catch (Exception ex) {
             throw new TokenManagerException("Falha ao tentar obter o conteúdo do token.", ex);
@@ -103,7 +101,7 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
     }
 
     private void validateCreatedAt(TokenPayload<R, U> tokenPayload) {
-        if (LocalDateTime.now().isAfter(tokenPayload.getCreatedAt().plus(this.expiration, ChronoUnit.MILLIS))) {
+        if (tokenPayload.isTokenExpired(this.expiration)) {
             throw new TokenManagerException("Token expirado!");
         }
     }

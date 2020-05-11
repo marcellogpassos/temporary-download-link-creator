@@ -32,10 +32,10 @@ public class DefaultCryptographyHelper implements ICryptographyHelper {
         }
     }
 
-    private Cipher getCipher(byte[] keyBytes, int mode)
+    private Cipher getCipher(byte[] secretKeyBytes, int mode)
             throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         Cipher cipher = Cipher.getInstance(DEFAULT_CIPHER_TRANSFORMATION);
-        SecretKey secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
+        SecretKey secretKey = new SecretKeySpec(secretKeyBytes, ALGORITHM);
         cipher.init(mode, secretKey);
         return cipher;
     }

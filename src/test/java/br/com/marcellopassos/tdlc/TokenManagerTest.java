@@ -1,17 +1,20 @@
 package br.com.marcellopassos.tdlc;
 
 import br.com.marcellopassos.tdlc.exceptions.TokenManagerException;
+import br.com.marcellopassos.tdlc.helpers.DefaultCryptographyHelper;
+import br.com.marcellopassos.tdlc.helpers.DefaultEncodingHelper;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TokenManagerTest {
 
     private final ITokenManager<String, Long> tokenManager;
 
     public TokenManagerTest() {
-        this.tokenManager = new TokenManager("WnZr4u7x!A%C*F-JaNdRgUkXp2s5v8y/", 10000L);
+        this.tokenManager = new TokenManager<>(5000L,
+                new DefaultCryptographyHelper("WnZr4u7x!A%C*F-JaNdRgUkXp2s5v8y/"),
+                new DefaultEncodingHelper());
     }
 
     @Test
@@ -19,7 +22,7 @@ public class TokenManagerTest {
         Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
         assertNotNull(token);
     }
@@ -29,9 +32,14 @@ public class TokenManagerTest {
         Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
-        this.tokenManager.evaluate(token, johnDoe);
+        TokenPayload<String, Long> evaluatedTokenPayload = this.tokenManager.evaluate(token, johnDoe);
+        assertNotNull(evaluatedTokenPayload);
+        assertEquals(recipe.getClass(), evaluatedTokenPayload.getResourceClass());
+        assertEquals(recipe.getId(), evaluatedTokenPayload.getResourceId());
+        assertTrue(evaluatedTokenPayload.getUserId().isPresent());
+        assertEquals(johnDoe.getId(), evaluatedTokenPayload.getUserId().get());
     }
 
     @Test
@@ -39,10 +47,10 @@ public class TokenManagerTest {
         Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
 
-        Thread.sleep(10000L);
+        Thread.sleep(5000L);
 
         assertThrows(TokenManagerException.class, () -> this.tokenManager.evaluate(token));
     }
@@ -52,13 +60,10 @@ public class TokenManagerTest {
         Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
-
         User jeanPaul = new User(2L, "Jean Paul");
-
         assertThrows(TokenManagerException.class, () -> this.tokenManager.evaluate(token, jeanPaul));
     }
-
 
 }

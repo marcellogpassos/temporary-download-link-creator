@@ -1,8 +1,6 @@
 package br.com.marcellopassos.tdlc;
 
 import br.com.marcellopassos.tdlc.exceptions.TokenManagerException;
-import br.com.marcellopassos.tdlc.helpers.DefaultCryptographyHelper;
-import br.com.marcellopassos.tdlc.helpers.DefaultEncodingHelper;
 import br.com.marcellopassos.tdlc.helpers.ICryptographyHelper;
 import br.com.marcellopassos.tdlc.helpers.IEncodingHelper;
 import org.apache.commons.lang3.SerializationUtils;
@@ -11,29 +9,13 @@ import java.io.Serializable;
 
 public class TokenManager<R extends Serializable, U extends Serializable> implements ITokenManager<R, U> {
 
-    private final String secretKey;
-
     private final Long expiration;
 
     private final ICryptographyHelper cryptographyHelper;
 
     private final IEncodingHelper encodingHelper;
 
-    public TokenManager(String secretKey, Long expiration) {
-        this(secretKey, expiration, new DefaultCryptographyHelper(), new DefaultEncodingHelper());
-    }
-
-    public TokenManager(String secretKey, Long expiration, ICryptographyHelper cryptographyHelper) {
-        this(secretKey, expiration, cryptographyHelper, new DefaultEncodingHelper());
-    }
-
-    public TokenManager(String secretKey, Long expiration, IEncodingHelper encodingHelper) {
-        this(secretKey, expiration, new DefaultCryptographyHelper(), encodingHelper);
-    }
-
-    public TokenManager(String secretKey, Long expiration, ICryptographyHelper cryptographyHelper,
-                        IEncodingHelper encodingHelper) {
-        this.secretKey = secretKey;
+    public TokenManager(Long expiration, ICryptographyHelper cryptographyHelper, IEncodingHelper encodingHelper) {
         this.expiration = expiration;
         this.cryptographyHelper = cryptographyHelper;
         this.encodingHelper = encodingHelper;
@@ -41,12 +23,12 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
 
     @Override
     public String generate(Class resourceClass, R resourceId) {
-        return this.generate(new TokenPayload(resourceClass, resourceId));
+        return this.generate(new TokenPayload<>(resourceClass, resourceId));
     }
 
     @Override
     public String generate(Class resourceClass, R resourceId, U userId) {
-        return this.generate(new TokenPayload(resourceClass, resourceId, userId));
+        return this.generate(new TokenPayload<>(resourceClass, resourceId, userId));
     }
 
     @Override
@@ -56,14 +38,14 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
 
     @Override
     public String generate(Identifiable<R> resource, Identifiable<U> user) {
-        return this.generate(new TokenPayload(resource, user));
+        return this.generate(new TokenPayload<>(resource, user));
     }
 
     @Override
     public String generate(TokenPayload<R, U> tokenPayload) {
         try {
             byte[] tokenPayloadBytes = SerializationUtils.serialize(tokenPayload);
-            byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes, this.secretKey.getBytes());
+            byte[] encryptedToken = this.cryptographyHelper.encrypt(tokenPayloadBytes);
             return this.encodingHelper.encode(encryptedToken);
         } catch (Exception ex) {
             throw new TokenManagerException("Falha ao tentar gerar o token.", ex);
@@ -93,7 +75,7 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
     private TokenPayload<R, U> getTokenPayload(String token) {
         try {
             byte[] encryptedToken = this.encodingHelper.decode(token);
-            byte[] tokenPayloadBytes = this.cryptographyHelper.decrypt(encryptedToken, this.secretKey.getBytes());
+            byte[] tokenPayloadBytes = this.cryptographyHelper.decrypt(encryptedToken);
             return SerializationUtils.deserialize(tokenPayloadBytes);
         } catch (Exception ex) {
             throw new TokenManagerException("Falha ao tentar obter o conteúdo do token.", ex);

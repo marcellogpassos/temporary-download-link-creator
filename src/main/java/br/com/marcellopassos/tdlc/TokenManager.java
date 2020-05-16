@@ -6,19 +6,24 @@ import br.com.marcellopassos.tdlc.helpers.IEncodingHelper;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 public class TokenManager<R extends Serializable, U extends Serializable> implements ITokenManager<R, U> {
 
-    private final Long expiration;
+    private Long expiration;
 
     private final ICryptographyHelper cryptographyHelper;
 
     private final IEncodingHelper encodingHelper;
 
-    public TokenManager(Long expiration, ICryptographyHelper cryptographyHelper, IEncodingHelper encodingHelper) {
-        this.expiration = expiration;
+    public TokenManager(ICryptographyHelper cryptographyHelper, IEncodingHelper encodingHelper) {
         this.cryptographyHelper = cryptographyHelper;
         this.encodingHelper = encodingHelper;
+    }
+
+    public TokenManager(Long expiration, ICryptographyHelper cryptographyHelper, IEncodingHelper encodingHelper) {
+        this(cryptographyHelper, encodingHelper);
+        this.expiration = expiration;
     }
 
     @Override
@@ -83,9 +88,11 @@ public class TokenManager<R extends Serializable, U extends Serializable> implem
     }
 
     private void validateCreatedAt(TokenPayload<R, U> tokenPayload) {
-        if (tokenPayload.isTokenExpired(this.expiration)) {
-            throw new TokenManagerException("Token expirado!");
-        }
+        Optional.ofNullable(this.expiration)
+                .filter(tokenPayload::isTokenExpired)
+                .ifPresent(expired -> {
+                    throw new TokenManagerException("Token expirado!");
+                });
     }
 
     private void validateRequestUser(TokenPayload<R, U> tokenPayload, U requestUserId) {

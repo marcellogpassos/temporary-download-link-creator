@@ -3,7 +3,6 @@ package br.com.marcellopassos.tdlc;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.Optional;
 
 public class TokenPayload<R extends Serializable, U extends Serializable> implements Serializable {
@@ -57,6 +56,8 @@ public class TokenPayload<R extends Serializable, U extends Serializable> implem
     }
 
     public boolean isPermissionGranted(U requestUserId) {
-        return Objects.isNull(this.userId) || this.userId.equals(requestUserId);
+        return Optional.ofNullable(this.userId)
+                .map(id -> id.equals(requestUserId))
+                .orElseGet(() -> true);
     }
 }

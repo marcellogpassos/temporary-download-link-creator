@@ -19,35 +19,35 @@ public class TokenManagerTest {
 
     @Test
     public void generate() {
-        Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
+        Document receipt = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/receipt.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(receipt, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
         assertNotNull(token);
     }
 
     @Test
     public void evaluate() {
-        Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
+        Document receipt = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/receipt.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(receipt, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
         TokenPayload<String, Long> evaluatedTokenPayload = this.tokenManager.evaluate(token, johnDoe);
         assertNotNull(evaluatedTokenPayload);
-        assertEquals(recipe.getClass(), evaluatedTokenPayload.getResourceClass());
-        assertEquals(recipe.getId(), evaluatedTokenPayload.getResourceId());
+        assertEquals(receipt.getClass(), evaluatedTokenPayload.getResourceClass());
+        assertEquals(receipt.getId(), evaluatedTokenPayload.getResourceId());
         assertTrue(evaluatedTokenPayload.getUserId().isPresent());
         assertEquals(johnDoe.getId(), evaluatedTokenPayload.getUserId().get());
     }
 
     @Test
     public void evaluate_throwExpiredToken() throws InterruptedException {
-        Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
+        Document receipt = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/receipt.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(receipt, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
 
         Thread.sleep(5000L);
@@ -57,10 +57,10 @@ public class TokenManagerTest {
 
     @Test
     public void evaluate_throwAccessDenied() {
-        Document recipe = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/recipe.pdf",
+        Document receipt = new Document("e10adc3949ba59abbe56e057f20f883e", 10L, "/home/john/receipt.pdf",
                 "application/pdf");
         User johnDoe = new User(1L, "John Doe");
-        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(recipe, johnDoe);
+        TokenPayload<String, Long> tokenPayload = new TokenPayload<>(receipt, johnDoe);
         String token = this.tokenManager.generate(tokenPayload);
         User jeanPaul = new User(2L, "Jean Paul");
         assertThrows(TokenManagerException.class, () -> this.tokenManager.evaluate(token, jeanPaul));
